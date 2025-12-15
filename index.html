@@ -2,7 +2,6 @@
 <!--
 名称：给你的头像加上圣诞帽
 制作：蕊蕊
-美工：蕊蕊
 Q Q ：1612704618
 -->
 <html lang='zh-CN'>
@@ -148,7 +147,7 @@ Q Q ：1612704618
     }
     /* 导出区域 */
     #export {
-      display: none;
+      display: none; /* 隐藏手动保存的图片，改为自动下载 */
       max-width: 300px;
       margin: 20px auto;
       border: 1px solid #444;
@@ -273,7 +272,7 @@ Q Q ：1612704618
       </div>
     </div>
 
-    <!-- 导出图片展示 -->
+    <!-- 导出图片展示（默认隐藏，改为自动下载） -->
     <img id="export" alt="圣诞头像" src="" />
 
     <!-- 底部提示 -->
@@ -285,10 +284,9 @@ Q Q ：1612704618
     </div>
   </div>
 
-  <!-- 隐藏的图片资源（路径改为 hats_images 目录，添加加载失败处理） -->
+  <!-- 隐藏的图片资源 -->
   <div style="display: none;">
     <img id="avatarImg" src="" alt="用户头像" />
-    <!-- 圣诞帽资源（路径统一改为 hats_images 目录，支持自定义数量） -->
     <img class="hat-res" src="hats_images/0.png" alt="圣诞帽1" data-hat-index="0" />
     <img class="hat-res" src="hats_images/1.png" alt="圣诞帽2" data-hat-index="1" />
     <img class="hat-res" src="hats_images/2.png" alt="圣诞帽3" data-hat-index="2" />
@@ -316,276 +314,243 @@ Q Q ：1612704618
   let canvasFabric;
   let hatInstance;
   let currentHatIndex = 0;
-  let validHatList = []; // 存储加载成功的帽子
+  let validHatList = [];
   const hatResList = document.getElementsByClassName("hat-res");
-  const screenWidth = Math.min(window.screen.width - 40, 350); // 画布宽度（减去边距）
+  const screenWidth = Math.min(window.screen.width - 40, 350);
 
-  // 预加载所有帽子图片，过滤加载失败的
+  // 预加载帽子
   function preloadHats() {
     return new Promise((resolve) => {
       let loadedCount = 0;
       const total = hatResList.length;
 
-      // 遍历所有帽子资源
       Array.from(hatResList).forEach((hat, index) => {
-        // 监听加载成功
         hat.onload = () => {
-          validHatList.push({
-            src: hat.src,
-            index: index
-          });
+          validHatList.push({ src: hat.src, index: index });
           loadedCount++;
           checkAllLoaded();
         };
-
-        // 监听加载失败
         hat.onerror = () => {
-          console.warn(`帽子图片加载失败：${hat.src}`);
+          console.warn(`帽子加载失败：${hat.src}`);
           loadedCount++;
           checkAllLoaded();
         };
-
-        // 手动触发加载（如果还没加载）
-        if (hat.complete) {
-          hat.onload();
-        }
+        if (hat.complete) hat.onload();
       });
 
-      // 所有图片都处理完后 resolve
       function checkAllLoaded() {
-        if (loadedCount === total) {
-          resolve();
-        }
+        if (loadedCount === total) resolve();
       }
     });
   }
 
-  // 生成圣诞帽选择栏（只显示加载成功的帽子）
+  // 渲染帽子列表
   async function renderHatList() {
-    // 清空现有列表
     hatListEl.innerHTML = "";
-    
-    // 等待帽子预加载完成
     await preloadHats();
 
-    // 如果没有可用的帽子，显示提示
     if (validHatList.length === 0) {
-      hatListEl.innerHTML = `<div style="padding:20px;color:#999;">没有找到可用的圣诞帽图片，请检查 hats_images 目录下的文件</div>`;
+      hatListEl.innerHTML = `<div style="padding:20px;color:#999;">没有可用的圣诞帽图片，请检查 hats_images 目录</div>`;
       return;
     }
 
-    // 动态生成帽子选项（只渲染加载成功的）
     validHatList.forEach((hat, listIndex) => {
       const item = document.createElement("div");
-      // 如果是当前选中的索引，设置active
-      const isActive = listIndex === currentHatIndex;
-      item.className = `hat-item ${isActive ? 'active' : ''}`;
-      item.dataset.listIndex = listIndex; // 用过滤后的索引
-      item.dataset.hatIndex = hat.index; // 原始图片索引
+      item.className = `hat-item ${listIndex === currentHatIndex ? 'active' : ''}`;
+      item.dataset.listIndex = listIndex;
 
-      // 图片元素（添加加载失败提示）
       const imgEl = document.createElement("img");
       imgEl.src = hat.src;
       imgEl.alt = `圣诞帽${hat.index+1}`;
-      imgEl.onerror = () => {
-        item.innerHTML = `<span class="hat-loading">加载失败</span>`;
-      };
+      imgEl.onerror = () => item.innerHTML = `<span class="hat-loading">加载失败</span>`;
 
       item.appendChild(imgEl);
-      
-      // 点击切换帽子
       item.onclick = () => {
         currentHatIndex = listIndex;
         changeHat();
-        // 更新选中状态
         document.querySelectorAll('.hat-item').forEach(i => i.classList.remove('active'));
         item.classList.add('active');
       };
-      
       hatListEl.appendChild(item);
     });
   }
 
-  // 页面加载完成后渲染帽子列表
+  // 页面加载初始化
   window.onload = () => {
     renderHatList();
-    // 绑定"换一顶"按钮事件
+    // 换一顶按钮事件
     changeBtn.onclick = () => {
       if (validHatList.length === 0) return;
-      // 切换到下一顶（循环切换）
       currentHatIndex = (currentHatIndex + 1) % validHatList.length;
-      // 更新帽子选择栏的active状态
       document.querySelectorAll('.hat-item').forEach((item, index) => {
         item.classList.toggle('active', index === currentHatIndex);
       });
-      // 切换帽子
       changeHat();
     };
   };
 
-  // 选择图片按钮绑定（点击唤起文件选择）
+  // 选择图片按钮
   selectImgBtn.onclick = () => document.getElementById("upload").click();
 
-  // 上传头像处理
+  // 上传头像
   function viewer() {
     const file = document.getElementById("upload").files[0];
     if (!file) return;
-    
-    // 验证文件类型
-    const fileType = file.type.split('/')[0];
-    if (fileType !== 'image') {
-      alert("请上传图片格式的文件！");
+    if (file.type.split('/')[0] !== 'image') {
+      alert("请上传图片格式文件！");
       return;
     }
-    
+
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = (e) => {
       avatarImg.src = e.target.result;
-      avatarImg.onload = () => {
-        initCanvas(); // 初始化画布
-      };
+      avatarImg.onload = initCanvas;
     };
   }
 
-  // 初始化Fabric画布
+  // 初始化画布
   function initCanvas() {
-    // 检查是否有可用帽子
     if (validHatList.length === 0) {
-      alert("没有可用的圣诞帽图片，请检查 hats_images 目录下的文件是否存在！");
+      alert("没有可用的圣诞帽，请检查 hats_images 目录！");
       return;
     }
 
-    // 设置画布大小
     cvs.width = screenWidth;
     cvs.height = screenWidth;
     canvasWrap.style.display = "block";
 
-    // 初始化Fabric画布（带背景图）
+    // 初始化画布，确保背景图居中
     canvasFabric = new fabric.Canvas("cvs", {
       width: screenWidth,
       height: screenWidth,
-      backgroundImage: new fabric.Image(avatarImg, {
-        scaleX: screenWidth / avatarImg.width,
-        scaleY: screenWidth / avatarImg.height,
-        originX: 'center',
-        originY: 'center',
-        left: screenWidth / 2,
-        top: screenWidth / 2
-      }),
-      selection: false // 禁用画布整体选择
+      selection: false
     });
 
-    // 显示操作按钮
+    // 添加背景图（头像）
+    const bgImg = new fabric.Image(avatarImg, {
+      scaleX: screenWidth / avatarImg.width,
+      scaleY: screenWidth / avatarImg.height,
+      originX: 'center',
+      originY: 'center',
+      left: screenWidth / 2,
+      top: screenWidth / 2
+    });
+    canvasFabric.setBackgroundImage(bgImg, canvasFabric.renderAll.bind(canvasFabric));
+
+    // 显示按钮并加载帽子
     changeBtn.style.display = "inline-block";
     exportBtn.style.display = "inline-block";
-
-    // 加载默认帽子
     changeHat();
   }
 
-  // 切换/更新帽子（使用加载成功的帽子列表）
+  // 切换帽子（确保水平居中）
   function changeHat() {
-    // 移除旧帽子实例
-    if (hatInstance) {
-      canvasFabric.remove(hatInstance);
-      hatInstance = null;
-    }
-
-    // 获取当前选中的有效帽子
+    if (hatInstance) canvasFabric.remove(hatInstance);
     const currentHat = validHatList[currentHatIndex];
     if (!currentHat) return;
 
-    // 创建新的图片对象（确保重新加载图片）
     const hatImg = new Image();
     hatImg.src = currentHat.src;
 
-    // 图片加载完成后添加到画布
     hatImg.onload = () => {
-      // 动态计算帽子初始位置：基于头像尺寸，默认戴在顶部居中
-      const avatarScale = screenWidth / avatarImg.width; // 头像缩放比例
-      const hatScale = 120 / hatImg.width; // 帽子初始缩放比例
-      // 帽子初始top = 头像顶部往下10%（适配不同尺寸头像）
-      const hatInitTop = (avatarImg.height * avatarScale) * 0.1;
-      
-      // 创建新的帽子实例
+      const avatarScale = screenWidth / avatarImg.width;
+      const hatScale = 120 / hatImg.width;
+      const hatInitTop = (avatarImg.height * avatarScale) * 0.1; // 顶部位置
+
+      // 核心：帽子水平居中（基于画布中心点）
       hatInstance = new fabric.Image(hatImg, {
-        top: hatInitTop, // 动态初始位置（头像顶部）
-        left: screenWidth / 2, // 水平居中
+        top: hatInitTop,
+        left: screenWidth / 2, // 画布水平中点
+        originX: 'center', // 帽子自身中心点对齐画布中点
+        originY: 'top', // 帽子顶部对齐计算位置
         scaleX: hatScale,
         scaleY: hatScale,
-        cornerColor: "#ff9900", // 控制柄颜色（圣诞色）
+        cornerColor: "#ff9900",
         cornerStrokeColor: "#fff",
-        cornerStyle: "circle", // 圆形控制柄
+        cornerStyle: "circle",
         transparentCorners: false,
-        rotatingPointOffset: 35, // 旋转控制点偏移
-        hasRotatingPoint: false, // 隐藏旋转控制柄（只保留缩放和移动）
-        borderColor: "#ff9900", // 选中边框颜色
-        borderScaleFactor: 1.2 // 边框缩放比例
+        hasRotatingPoint: false,
+        borderColor: "#ff9900",
+        borderScaleFactor: 1.2
       });
 
-      // 隐藏不需要的控制柄（只保留右下和中间控制柄）
+      // 隐藏多余控制柄
       hatInstance.setControlVisible({
-        bl: false, // 左下
-        tr: false, // 右上
-        tl: false, // 左上
-        mr: false, // 右中
-        mt: false, // 上中
-        ml: false, // 左中
-        mb: false  // 下中
+        bl: false, tr: false, tl: false, mr: false, mt: false, ml: false, mb: false
       });
 
-      // 添加帽子到画布
       canvasFabric.add(hatInstance);
-      // 设置帽子为可选中状态
-      hatInstance.selectable = true;
       canvasFabric.setActiveObject(hatInstance);
     };
 
-    // 帽子加载失败处理
     hatImg.onerror = () => {
-      alert(`圣诞帽加载失败：${currentHat.src}`);
-      // 切换到下一顶帽子
+      alert(`帽子加载失败，自动切换下一顶`);
       currentHatIndex = (currentHatIndex + 1) % validHatList.length;
-      changeHat();
-      // 更新选中状态
       document.querySelectorAll('.hat-item').forEach((item, index) => {
         item.classList.toggle('active', index === currentHatIndex);
       });
+      changeHat();
     };
   }
 
-  // 导出图片
+  // 导出图片（修复显示+自动下载）
   function exportFunc() {
     if (!canvasFabric || !hatInstance) return;
 
-    // 隐藏画布和操作按钮，显示导出图片
-    canvasWrap.style.display = "none";
-    changeBtn.style.display = "none";
-    exportBtn.style.display = "none";
-    
-    // 导出图片（高清格式）
-    exportImage.style.display = "block";
-    exportImage.src = canvasFabric.toDataURL({
-      format: 'png',
-      quality: 1.0,
-      width: screenWidth * 2, // 两倍分辨率，更清晰
-      height: screenWidth * 2
-    });
+    // 1. 优化导出尺寸（保持正方形，避免拉伸）
+    const exportSize = screenWidth * 2; // 2倍高清
 
-    // 更新提示文字
-    document.getElementById("tip").innerHTML = "长按图片保存到手机 📱 | 右键图片另存为（电脑）";
-    document.getElementById("tip").style.display = "block";
-    document.getElementById("tip").style.color = "#ffcc66";
+    // 2. 临时画布，重新渲染（解决偏移）
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = exportSize;
+    tempCanvas.height = exportSize;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    // 3. 绘制背景图（头像）
+    tempCtx.drawImage(
+      avatarImg,
+      (tempCanvas.width - exportSize) / 2,
+      (tempCanvas.height - exportSize) / 2,
+      exportSize,
+      exportSize
+    );
+
+    // 4. 绘制帽子（同步原位置和缩放）
+    const hatScaleX = hatInstance.scaleX;
+    const hatScaleY = hatInstance.scaleY;
+    const hatWidth = hatInstance._element.width * hatScaleX;
+    const hatHeight = hatInstance._element.height * hatScaleY;
+
+    // 帽子位置按导出比例缩放，确保居中
+    const hatLeft = (hatInstance.left / screenWidth) * exportSize - hatWidth / 2;
+    const hatTop = (hatInstance.top / screenWidth) * exportSize;
+
+    tempCtx.drawImage(
+      hatInstance._element,
+      hatLeft,
+      hatTop,
+      hatWidth * 2, // 同步2倍导出尺寸
+      hatHeight * 2
+    );
+
+    // 5. 自动触发下载（核心修复）
+    const a = document.createElement('a');
+    a.href = tempCanvas.toDataURL('image/png');
+    a.download = `圣诞头像_${new Date().getTime()}.png`; // 文件名带时间戳
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // 6. 提示下载成功
+    alert("图片已开始下载，请注意查收！");
   }
 
-  // 窗口大小变化时重新调整画布
+  // 窗口 resize 处理
   window.onresize = () => {
     if (canvasFabric) {
       const newWidth = Math.min(window.screen.width - 40, 350);
-      if (newWidth !== screenWidth) {
-        location.reload(); // 简单处理：刷新页面重新初始化（也可优化为不刷新调整）
-      }
+      if (newWidth !== screenWidth) location.reload();
     }
   };
 </script>
