@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<!--
+名称：给你的头像加上圣诞帽
+制作：蕊蕊
+美工：蕊蕊
+Q Q ：1612704618
+-->
+<html lang='zh-CN'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0'>
+  <meta http-equiv='X-UA-Compatible' content='ie=edge'>
+  <title>给你的头像加上圣诞帽</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Microsoft YaHei", sans-serif;
+    }
+    body {
+      font-size: 16px;
+      background-color: #1a1a1a;
+      padding: 20px;
+      color: #fff;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .page-title {
+      font-size: 24px;
+      text-align: center;
+      margin-bottom: 30px;
+      color: #ff9900;
+      text-shadow: 0 0 8px rgba(255,153,0,0.6);
+    }
+    .section {
+      background-color: #2d2d2d;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .section-title {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #ffcc66;
+      display: flex;
+      align-items: center;
+    }
+    .section-title::before {
+      content: "🎄";
+      margin-right: 8px;
+    }
+    /* 上传区域 */
+    .upload-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      padding: 20px 0;
+    }
+    .upload-btn {
+      background-color: #3d3d3d;
+      border: 1px dashed #666;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .upload-btn:hover {
+      border-color: #ff9900;
+      background-color: #444;
+    }
+    #upload {
+      display: none;
+    }
+    .select-img-btn {
+      background-color: #ff9900;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      color: #1a1a1a;
+      font-weight: 600;
+    }
+    .select-img-btn:hover {
+      background-color: #ffcc66;
+      transform: translateY(-2px);
+    }
+    /* 圣诞帽选择栏 */
+    .hat-list {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding: 10px 0;
+      scrollbar-width: thin;
+      scrollbar-color: #ff9900 #3d3d3d;
+    }
+    .hat-list::-webkit-scrollbar {
+      height: 6px;
+    }
+    .hat-list::-webkit-scrollbar-thumb {
+      background-color: #ff9900;
+      border-radius: 3px;
+    }
+    .hat-item {
+      width: 85px;
+      height: 85px;
+      border: 2px solid #444;
+      border-radius: 8px;
+      padding: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background-color: #333;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hat-item.active {
+      border-color: #ff9900;
+      box-shadow: 0 0 10px rgba(255,153,0,0.5);
+    }
+    .hat-item:hover {
+      border-color: #ffcc66;
+      transform: scale(1.05);
+    }
+    .hat-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    /* 画布区域 */
+    .canvas-wrap {
+      margin: 20px 0;
+      display: none;
+      text-align: center;
+    }
+    #cvs {
+      max-width: 100%;
+      border: 1px solid #444;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    }
+    /* 导出区域 */
+    #export {
+      display: none;
+      max-width: 300px;
+      margin: 20px auto;
+      border: 1px solid #444;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    }
+    /* 操作按钮区域 */
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    .btn {
+      padding: 12px 28px;
+      border-radius: 25px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+      font-weight: 600;
+    }
+    .change-btn {
+      background-color: #3d3d3d;
+      color: #ffcc66;
+    }
+    .change-btn:hover {
+      background-color: #444;
+      transform: translateY(-2px);
+    }
+    .export-btn {
+      background-color: #ff9900;
+      color: #1a1a1a;
+    }
+    .export-btn:hover {
+      background-color: #ffcc66;
+      transform: translateY(-2px);
+    }
+    .btn:disabled {
+      background-color: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+    /* 提示文字 */
+    #tip {
+      margin-top: 12px;
+      font-size: 14px;
+      color: #999;
+      opacity: 0.8;
+    }
+    /* 底部提示 */
+    .footer-tip {
+      font-size: 14px;
+      color: #888;
+      margin-top: 30px;
+      text-align: center;
+      line-height: 1.8;
+    }
+    .footer-link {
+      color: #ff9900;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    .footer-link:hover {
+      color: #ffcc66;
+      text-decoration: underline;
+    }
+    /* 图片加载失败提示 */
+    .hat-loading {
+      font-size: 12px;
+      color: #999;
+    }
+    /* 响应式调整 */
+    @media (max-width: 375px) {
+      .upload-area {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .btn-group {
+        flex-direction: column;
+      }
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="page-title">给你的头像加上圣诞帽</h1>
+
+    <!-- 选择图片区域 -->
+    <div class="section">
+      <h3 class="section-title">选择要制作的图片</h3>
+      <div class="upload-area">
+        <label for="upload" class="upload-btn">点击上传头像</label>
+        <input id="upload" type="file" onchange="viewer()" accept="image/*">
+        <button class="select-img-btn" id="selectImgBtn">选择图片</button>
+      </div>
+    </div>
+
+    <!-- 圣诞帽选择区域 -->
+    <div class="section">
+      <h3 class="section-title">选择一顶圣诞帽（左右滑动）</h3>
+      <div class="hat-list" id="hatList">
+        <!-- 帽子选项会通过JS动态生成 -->
+      </div>
+    </div>
+
+    <!-- 画布区域 -->
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="cvs"></canvas>
+      <p id="tip">点击帽子调整位置和大小 🎅</p>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="section">
+      <h3 class="section-title">制作完成了就下载吧</h3>
+      <div class="btn-group">
+        <button class="btn change-btn" id="changeBtn" style="display:none;">换 一 顶</button>
+        <button class="btn export-btn" id="exportBtn" style="display:none;" onclick="exportFunc()">保存图片</button>
+      </div>
+    </div>
+
+    <!-- 导出图片展示 -->
+    <img id="export" alt="圣诞头像" src="" />
+
+    <!-- 底部提示 -->
+    <div class="footer-tip">
+      本站自2025年12月7日傍晚开始流量暴涨，博主已经对服务器进行了一次紧急扩容，<br>
+      如果你感到访问速度缓慢，敬请谅解~<br>
+      <a href="http://wpa.qq.com/msgrd?v=3&uin=1612704618&site=qq&menu=yes" target="_blank" class="footer-link">点击这里联系我</a> | 
+      <a href="http://wpa.qq.com/msgrd?v=3&uin=1612704618&site=qq&menu=yes" target="_blank" class="footer-link">访问我的博客</a>
+    </div>
+  </div>
+
+  <!-- 隐藏的图片资源（路径改为 hats_images 目录，添加加载失败处理） -->
+  <div style="display: none;">
+    <img id="avatarImg" src="" alt="用户头像" />
+    <!-- 圣诞帽资源（路径统一改为 hats_images 目录，支持自定义数量） -->
+    <img class="hat-res" src="hats_images/0.png" alt="圣诞帽1" data-hat-index="0" />
+    <img class="hat-res" src="hats_images/1.png" alt="圣诞帽2" data-hat-index="1" />
+    <img class="hat-res" src="hats_images/2.png" alt="圣诞帽3" data-hat-index="2" />
+    <img class="hat-res" src="hats_images/3.png" alt="圣诞帽4" data-hat-index="3" />
+    <img class="hat-res" src="hats_images/4.png" alt="圣诞帽5" data-hat-index="4" />
+    <img class="hat-res" src="hats_images/5.png" alt="圣诞帽6" data-hat-index="5" />
+    <img class="hat-res" src="hats_images/6.png" alt="圣诞帽7" data-hat-index="6" />
+    <img class="hat-res" src="hats_images/7.png" alt="圣诞帽8" data-hat-index="7" />
+    <img class="hat-res" src="hats_images/8.png" alt="圣诞帽9" data-hat-index="8" />
+    <img class="hat-res" src="hats_images/9.png" alt="圣诞帽10" data-hat-index="9" />
+  </div>
+
+<script src="fabric.min.js"></script>
+<script>
+  // 初始化变量
+  const cvs = document.getElementById("cvs");
+  const exportImage = document.getElementById("export");
+  const avatarImg = document.getElementById("avatarImg");
+  const hatListEl = document.getElementById("hatList");
+  const canvasWrap = document.getElementById("canvasWrap");
+  const changeBtn = document.getElementById("changeBtn");
+  const exportBtn = document.getElementById("exportBtn");
+  const selectImgBtn = document.getElementById("selectImgBtn");
+  
+  let canvasFabric;
+  let hatInstance;
+  let currentHatIndex = 0;
+  let validHatList = []; // 存储加载成功的帽子
+  const hatResList = document.getElementsByClassName("hat-res");
+  const screenWidth = Math.min(window.screen.width - 40, 350); // 画布宽度（减去边距）
+
+  // 预加载所有帽子图片，过滤加载失败的
+  function preloadHats() {
+    return new Promise((resolve) => {
+      let loadedCount = 0;
+      const total = hatResList.length;
+
+      // 遍历所有帽子资源
+      Array.from(hatResList).forEach((hat, index) => {
+        // 监听加载成功
+        hat.onload = () => {
+          validHatList.push({
+            src: hat.src,
+            index: index
+          });
+          loadedCount++;
+          checkAllLoaded();
+        };
+
+        // 监听加载失败
+        hat.onerror = () => {
+          console.warn(`帽子图片加载失败：${hat.src}`);
+          loadedCount++;
+          checkAllLoaded();
+        };
+
+        // 手动触发加载（如果还没加载）
+        if (hat.complete) {
+          hat.onload();
+        }
+      });
+
+      // 所有图片都处理完后 resolve
+      function checkAllLoaded() {
+        if (loadedCount === total) {
+          resolve();
+        }
+      }
+    });
+  }
+
+  // 生成圣诞帽选择栏（只显示加载成功的帽子）
+  async function renderHatList() {
+    // 清空现有列表
+    hatListEl.innerHTML = "";
+    
+    // 等待帽子预加载完成
+    await preloadHats();
+
+    // 如果没有可用的帽子，显示提示
+    if (validHatList.length === 0) {
+      hatListEl.innerHTML = `<div style="padding:20px;color:#999;">没有找到可用的圣诞帽图片，请检查 hats_images 目录下的文件</div>`;
+      return;
+    }
+
+    // 动态生成帽子选项（只渲染加载成功的）
+    validHatList.forEach((hat, listIndex) => {
+      const item = document.createElement("div");
+      // 如果是当前选中的索引，设置active
+      const isActive = listIndex === currentHatIndex;
+      item.className = `hat-item ${isActive ? 'active' : ''}`;
+      item.dataset.listIndex = listIndex; // 用过滤后的索引
+      item.dataset.hatIndex = hat.index; // 原始图片索引
+
+      // 图片元素（添加加载失败提示）
+      const imgEl = document.createElement("img");
+      imgEl.src = hat.src;
+      imgEl.alt = `圣诞帽${hat.index+1}`;
+      imgEl.onerror = () => {
+        item.innerHTML = `<span class="hat-loading">加载失败</span>`;
+      };
+
+      item.appendChild(imgEl);
+      
+      // 点击切换帽子
+      item.onclick = () => {
+        currentHatIndex = listIndex;
+        changeHat();
+        // 更新选中状态
+        document.querySelectorAll('.hat-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      };
+      
+      hatListEl.appendChild(item);
+    });
+  }
+
+  // 页面加载完成后渲染帽子列表
+  window.onload = () => {
+    renderHatList();
+    // 绑定"换一顶"按钮事件
+    changeBtn.onclick = () => {
+      if (validHatList.length === 0) return;
+      // 切换到下一顶（循环切换）
+      currentHatIndex = (currentHatIndex + 1) % validHatList.length;
+      // 更新帽子选择栏的active状态
+      document.querySelectorAll('.hat-item').forEach((item, index) => {
+        item.classList.toggle('active', index === currentHatIndex);
+      });
+      // 切换帽子
+      changeHat();
+    };
+  };
+
+  // 选择图片按钮绑定（点击唤起文件选择）
+  selectImgBtn.onclick = () => document.getElementById("upload").click();
+
+  // 上传头像处理
+  function viewer() {
+    const file = document.getElementById("upload").files[0];
+    if (!file) return;
+    
+    // 验证文件类型
+    const fileType = file.type.split('/')[0];
+    if (fileType !== 'image') {
+      alert("请上传图片格式的文件！");
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (e) => {
+      avatarImg.src = e.target.result;
+      avatarImg.onload = () => {
+        initCanvas(); // 初始化画布
+      };
+    };
+  }
+
+  // 初始化Fabric画布
+  function initCanvas() {
+    // 检查是否有可用帽子
+    if (validHatList.length === 0) {
+      alert("没有可用的圣诞帽图片，请检查 hats_images 目录下的文件是否存在！");
+      return;
+    }
+
+    // 设置画布大小
+    cvs.width = screenWidth;
+    cvs.height = screenWidth;
+    canvasWrap.style.display = "block";
+
+    // 初始化Fabric画布（带背景图）
+    canvasFabric = new fabric.Canvas("cvs", {
+      width: screenWidth,
+      height: screenWidth,
+      backgroundImage: new fabric.Image(avatarImg, {
+        scaleX: screenWidth / avatarImg.width,
+        scaleY: screenWidth / avatarImg.height,
+        originX: 'center',
+        originY: 'center',
+        left: screenWidth / 2,
+        top: screenWidth / 2
+      }),
+      selection: false // 禁用画布整体选择
+    });
+
+    // 显示操作按钮
+    changeBtn.style.display = "inline-block";
+    exportBtn.style.display = "inline-block";
+
+    // 加载默认帽子
+    changeHat();
+  }
+
+  // 切换/更新帽子（使用加载成功的帽子列表）
+  function changeHat() {
+    // 移除旧帽子实例
+    if (hatInstance) {
+      canvasFabric.remove(hatInstance);
+      hatInstance = null;
+    }
+
+    // 获取当前选中的有效帽子
+    const currentHat = validHatList[currentHatIndex];
+    if (!currentHat) return;
+
+    // 创建新的图片对象（确保重新加载图片）
+    const hatImg = new Image();
+    hatImg.src = currentHat.src;
+
+    // 图片加载完成后添加到画布
+    hatImg.onload = () => {
+      // 动态计算帽子初始位置：基于头像尺寸，默认戴在顶部居中
+      const avatarScale = screenWidth / avatarImg.width; // 头像缩放比例
+      const hatScale = 120 / hatImg.width; // 帽子初始缩放比例
+      // 帽子初始top = 头像顶部往下10%（适配不同尺寸头像）
+      const hatInitTop = (avatarImg.height * avatarScale) * 0.1;
+      
+      // 创建新的帽子实例
+      hatInstance = new fabric.Image(hatImg, {
+        top: hatInitTop, // 动态初始位置（头像顶部）
+        left: screenWidth / 2, // 水平居中
+        scaleX: hatScale,
+        scaleY: hatScale,
+        cornerColor: "#ff9900", // 控制柄颜色（圣诞色）
+        cornerStrokeColor: "#fff",
+        cornerStyle: "circle", // 圆形控制柄
+        transparentCorners: false,
+        rotatingPointOffset: 35, // 旋转控制点偏移
+        hasRotatingPoint: false, // 隐藏旋转控制柄（只保留缩放和移动）
+        borderColor: "#ff9900", // 选中边框颜色
+        borderScaleFactor: 1.2 // 边框缩放比例
+      });
+
+      // 隐藏不需要的控制柄（只保留右下和中间控制柄）
+      hatInstance.setControlVisible({
+        bl: false, // 左下
+        tr: false, // 右上
+        tl: false, // 左上
+        mr: false, // 右中
+        mt: false, // 上中
+        ml: false, // 左中
+        mb: false  // 下中
+      });
+
+      // 添加帽子到画布
+      canvasFabric.add(hatInstance);
+      // 设置帽子为可选中状态
+      hatInstance.selectable = true;
+      canvasFabric.setActiveObject(hatInstance);
+    };
+
+    // 帽子加载失败处理
+    hatImg.onerror = () => {
+      alert(`圣诞帽加载失败：${currentHat.src}`);
+      // 切换到下一顶帽子
+      currentHatIndex = (currentHatIndex + 1) % validHatList.length;
+      changeHat();
+      // 更新选中状态
+      document.querySelectorAll('.hat-item').forEach((item, index) => {
+        item.classList.toggle('active', index === currentHatIndex);
+      });
+    };
+  }
+
+  // 导出图片
+  function exportFunc() {
+    if (!canvasFabric || !hatInstance) return;
+
+    // 隐藏画布和操作按钮，显示导出图片
+    canvasWrap.style.display = "none";
+    changeBtn.style.display = "none";
+    exportBtn.style.display = "none";
+    
+    // 导出图片（高清格式）
+    exportImage.style.display = "block";
+    exportImage.src = canvasFabric.toDataURL({
+      format: 'png',
+      quality: 1.0,
+      width: screenWidth * 2, // 两倍分辨率，更清晰
+      height: screenWidth * 2
+    });
+
+    // 更新提示文字
+    document.getElementById("tip").innerHTML = "长按图片保存到手机 📱 | 右键图片另存为（电脑）";
+    document.getElementById("tip").style.display = "block";
+    document.getElementById("tip").style.color = "#ffcc66";
+  }
+
+  // 窗口大小变化时重新调整画布
+  window.onresize = () => {
+    if (canvasFabric) {
+      const newWidth = Math.min(window.screen.width - 40, 350);
+      if (newWidth !== screenWidth) {
+        location.reload(); // 简单处理：刷新页面重新初始化（也可优化为不刷新调整）
+      }
+    }
+  };
+</script>
+</body>
+</html>
