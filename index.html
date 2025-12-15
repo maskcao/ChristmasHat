@@ -494,57 +494,51 @@ Q Q ：1612704618
     };
   }
 
-  // 导出图片（修复显示+自动下载）
-  function exportFunc() {
-    if (!canvasFabric || !hatInstance) return;
+// 导出图片（修复位置偏差，同步预览效果）
+function exportFunc() {
+  if (!canvasFabric || !hatInstance) return;
 
-    // 1. 优化导出尺寸（保持正方形，避免拉伸）
-    const exportSize = screenWidth * 2; // 2倍高清
+  // 1. 直接导出Fabric画布的完整内容（包含调整后的帽子位置/大小）
+  // 禁用抗锯齿，确保图片清晰
+  canvasFabric.contextContainer.imageSmoothingEnabled = false;
+  canvasFabric.contextTop.imageSmoothingEnabled = false;
+  
+  // 2. 生成高清图片URL（保持和预览一致的尺寸和内容）
+  const dataURL = canvasFabric.toDataURL({
+    format: 'png',
+    quality: 1.0,
+    multiplier: 2 // 2倍分辨率，更清晰
+  });
 
-    // 2. 临时画布，重新渲染（解决偏移）
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = exportSize;
-    tempCanvas.height = exportSize;
-    const tempCtx = tempCanvas.getContext('2d');
-
-    // 3. 绘制背景图（头像）
-    tempCtx.drawImage(
-      avatarImg,
-      (tempCanvas.width - exportSize) / 2,
-      (tempCanvas.height - exportSize) / 2,
-      exportSize,
-      exportSize
-    );
-
-    // 4. 绘制帽子（同步原位置和缩放）
-    const hatScaleX = hatInstance.scaleX;
-    const hatScaleY = hatInstance.scaleY;
-    const hatWidth = hatInstance._element.width * hatScaleX;
-    const hatHeight = hatInstance._element.height * hatScaleY;
-
-    // 帽子位置按导出比例缩放，确保居中
-    const hatLeft = (hatInstance.left / screenWidth) * exportSize - hatWidth / 2;
-    const hatTop = (hatInstance.top / screenWidth) * exportSize;
-
-    tempCtx.drawImage(
-      hatInstance._element,
-      hatLeft,
-      hatTop,
-      hatWidth * 2, // 同步2倍导出尺寸
-      hatHeight * 2
-    );
-
-    // 5. 自动触发下载（核心修复）
+  // 3. 针对本地文件（file://协议）兼容处理：
+  // 若自动下载失败，则显示图片供手动保存
+  try {
+    // 尝试自动下载
     const a = document.createElement('a');
-    a.href = tempCanvas.toDataURL('image/png');
-    a.download = `圣诞头像_${new Date().getTime()}.png`; // 文件名带时间戳
+    a.href = dataURL;
+    a.download = `圣诞头像_${new Date().getTime()}.png`;
     document.body.appendChild(a);
-    a.click();
+    // 模拟用户点击（部分浏览器本地文件会拦截）
+    const event = new MouseEvent('click', {
+      view: window,
+      bubbles: true,
+      cancelable: true
+    });
+    a.dispatchEvent(event);
     document.body.removeChild(a);
-
-    // 6. 提示下载成功
     alert("图片已开始下载，请注意查收！");
+  } catch (e) {
+    // 自动下载失败时，显示图片手动保存
+    const exportImg = document.getElementById('export');
+    exportImg.src = dataURL;
+    exportImg.style.display = 'block';
+    canvasWrap.style.display = 'none';
+    changeBtn.style.display = 'none';
+    exportBtn.style.display = 'none';
+    document.getElementById('tip').innerHTML = '右键图片 -> 另存为 保存图片 📌';
+    document.getElementById('tip').style.color = '#ffcc66';
   }
+}
 
   // 窗口 resize 处理
   window.onresize = () => {
